@@ -29,16 +29,14 @@ class SyncSugarShell extends Shell
 
             $login_result = $this->call("login", $login_parameters, $url);
 
-            /*
-            echo "<pre>";
-            print_r($login_result);
-            echo "</pre>";
-            */
+
+
+
 
             //get session id
             $session_id = $login_result->id;
             $query_params = array(
-              'fields' => ['Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid']);
+              'fields' => ['Forms.phone','Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid']);
             if (isset($this->args[0])&& $this->args[0] == "new") {
                 $query_params['conditions'] = ['Forms.sugar_uuid is'  => null];
             }
@@ -59,14 +57,15 @@ class SyncSugarShell extends Shell
                  "session" => $session_id,
 
                  //The name of the module from which to retrieve records.
-                 "module_name" => "Accounts",
+                 "module_name" => "Leads",
 
                  //Record attributes
                  "name_value_list" => array(
                       //to update a record, you will nee to pass in a record id as commented below
                       //array("name" => "id", "value" => "9b170af9-3080-e22b-fbc1-4fea74def88f"),
-                      array("name" => "name", "value" => $row->fullname),
+                      array("name" => "first_name", "value" => $row->fullname),
                       array("name" => "email1", "value" => $row->email),
+                      array("name" => "phone_work", "value" => $row->phone),
                  ),
             );
             if(!is_null($row->sugar_uuid)) {
@@ -77,6 +76,7 @@ class SyncSugarShell extends Shell
             $set_entry_result = $this->call("set_entry", $set_entry_parameters, $url);
 
             $row->sugar_uuid = $set_entry_result->id;
+
             $this->Forms->save($row);
 echo "                                                               \r";
 $this->progressBar($i, $l);
