@@ -12,7 +12,7 @@ class SyncSugarShell extends Shell
     public function main()
     {
 
-            $url = "http://sugar.mesina.me/service/v4_1/rest.php";
+            $url = "http://52.40.51.210/service/v4_1/rest.php";
             $username = "admin";
             $password = "stusWeW2";
 
