@@ -36,7 +36,7 @@ class SyncSugarShell extends Shell
             //get session id
             $session_id = $login_result->id;
             $query_params = array(
-              'fields' => ['Forms.phone','Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid']);
+              'fields' => ['Forms.referer','Forms.phone','Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid']);
             if (isset($this->args[0])&& $this->args[0] == "new") {
                 $query_params['conditions'] = ['Forms.sugar_uuid is'  => null];
             }
@@ -50,7 +50,7 @@ class SyncSugarShell extends Shell
             $l=count($rows);
             foreach ($rows as $row) {
 
-
+/*
             //create account -------------------------------------
             $set_entry_parameters = array(
                  //session id
@@ -66,6 +66,8 @@ class SyncSugarShell extends Shell
                       array("name" => "first_name", "value" => $row->fullname),
                       array("name" => "email1", "value" => $row->email),
                       array("name" => "phone_work", "value" => $row->phone),
+                      array("name" => "status", "value" => "Dead"),
+                      array("name" => "lead_source", "value" => "Web Site"),
                  ),
             );
             if(!is_null($row->sugar_uuid)) {
@@ -78,9 +80,53 @@ class SyncSugarShell extends Shell
             $row->sugar_uuid = $set_entry_result->id;
 
             $this->Forms->save($row);
+
+
+
+
+*/
+
+
+
+            $set_entry_parameters = array(
+                 //session id
+                 "session" => $session_id,
+
+                 //The name of the module from which to retrieve records.
+                 "module_name" => "Calls",
+
+                 //Record attributes
+                 "name_value_list" => array(
+                      //to update a record, you will nee to pass in a record id as commented below
+                      //array("name" => "id", "value" => "9b170af9-3080-e22b-fbc1-4fea74def88f"),
+                      array("name" => "name", "value" => "Llamada Ejemplo 2"),
+                      array("name" => "date_start", "value" => "2016-12-28 13:09"),
+
+                      array("name" => "duration_hours", "value" => "00"),
+                      array("name" => "duration_minutes", "value" => 15),
+                 ),
+            );
+
+
+
+            $set_entry_result = $this->call("set_entry", $set_entry_parameters, $url);
+
+
+
+
+
+
+
+
+
+
+
+
+
 echo "                                                               \r";
 $this->progressBar($i, $l);
 $i++;
+exit(0);
             // echo $row->fullname .', '. $row->email."\r";
 //@ob_flush();
 //flush();
