@@ -36,7 +36,7 @@ class SyncSugarShell extends Shell
             //get session id
             $session_id = $login_result->id;
             $query_params = array(
-              'fields' => ['Proyecto.nombre','Forms.referer','Forms.phone','Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid'],
+              'fields' => ['Proyectos.nombre','Forms.referer','Forms.phone','Forms.fullname', 'Forms.id', 'Forms.email', 'Forms.sugar_uuid'],
               'contain' => ['Proyectos']
             );
             if (isset($this->args[0])&& $this->args[0] == "new") {
