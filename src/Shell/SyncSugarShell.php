@@ -50,7 +50,7 @@ class SyncSugarShell extends Shell
             $l=count($rows);
             foreach ($rows as $row) {
 
-/*
+
             //create account -------------------------------------
             $set_entry_parameters = array(
                  //session id
@@ -84,7 +84,7 @@ class SyncSugarShell extends Shell
 
 
 
-*/
+
 
 
 
@@ -126,7 +126,7 @@ class SyncSugarShell extends Shell
 echo "                                                               \r";
 $this->progressBar($i, $l);
 $i++;
-exit(0);
+
             // echo $row->fullname .', '. $row->email."\r";
 //@ob_flush();
 //flush();
