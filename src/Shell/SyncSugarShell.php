@@ -81,6 +81,34 @@ class SyncSugarShell extends Shell
 
             $row->sugar_uuid = $set_entry_result->id;
 
+//agregar relacion con usuario o asignado a
+
+$set_relationship_parameters = array(
+//session id
+'session' => $session_id,
+
+//The name of the module.
+'module_name' => 'Leads',
+
+//The ID of the specified module bean.
+'module_id' => $row->sugar_uuid ,
+
+//The relationship name of the linked field from which to relate records.
+'link_field_name' => 'users',
+
+//The list of record ids to relate
+'related_ids' => array(
+'6bfb92ab-8852-326c-023f-57857543e0cc',
+)
+
+//Whether or not to delete the relationship. 0:create, 1:delete
+'delete'=> 0,
+);
+
+                        $set_relationship_result = $this->call("set_relationship", $set_relationship_parameters, $url);
+
+
+
             $this->Forms->save($row);
 
 
