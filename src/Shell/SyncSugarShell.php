@@ -68,7 +68,7 @@ class SyncSugarShell extends Shell
                       array("name" => "first_name", "value" => $row->fullname),
                       array("name" => "email1", "value" => $row->email),
                       array("name" => "phone_work", "value" => $row->phone),
-                      array("name" => "proyecto", "value" => $row->proyecto->nombre),
+                      array("name" => "proyecto_c", "value" => $row->proyecto->nombre),
                       array("name" => "lead_source", "value" => "Web Site"),
                  ),
             );
