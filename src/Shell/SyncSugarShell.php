@@ -51,7 +51,7 @@ class SyncSugarShell extends Shell
             $i=1;
             $l=count($rows);
             foreach ($rows as $row) {
-debug($row);exit;
+
 
             //create account -------------------------------------
             $set_entry_parameters = array(
