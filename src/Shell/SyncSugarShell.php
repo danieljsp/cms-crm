@@ -99,7 +99,7 @@ $set_relationship_parameters = array(
 //The list of record ids to relate
 'related_ids' => array(
 '6bfb92ab-8852-326c-023f-57857543e0cc',
-)
+),
 
 //Whether or not to delete the relationship. 0:create, 1:delete
 'delete'=> 0,
