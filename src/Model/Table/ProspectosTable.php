@@ -2,11 +2,12 @@
 
 use Cake\ORM\Table;
 
-class ProyectosTable extends Table
+class ProspectosTable extends Table
 {
   public function initialize(array $config)
     {
-        $this->hasOne('Prospectos');
+        $this->belongsTo('Proyectos');
+        $this->hasMany('Compromisos');
     }
 
 }

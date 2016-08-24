@@ -2,11 +2,11 @@
 
 use Cake\ORM\Table;
 
-class FormsTable extends Table
+class CompromisosTable extends Table
 {
   public function initialize(array $config)
     {
-        $this->belongsTo('Proyectos');
+        $this->belongsTo('Prospectos');
     }
 
 }
