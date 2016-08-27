@@ -4,6 +4,7 @@ use Cake\Console\Shell;
 
 class SyncSugarShell extends Shell
 {   public $users;
+    public $sellers;
     public function initialize()
     {
         parent::initialize();
@@ -59,13 +60,58 @@ class SyncSugarShell extends Shell
           93=>"94c86965-2ee4-812a-2739-57bc12f075f5",
           94=>"f1249da9-9958-1a2b-957c-57bc121dd283"
         );
-    }
+
+        $this->sellers = array(
+          27=>"e4066c99-230b-a3a2-2b86-57c11ccc3ff9",
+          28=>"e4066c99-230b-a3a2-2b86-57c11ccc3ff9",
+          20=>"e4066c99-230b-a3a2-2b86-57c11ccc3ff9",
+          23=>"e4066c99-230b-a3a2-2b86-57c11ccc3ff9",
+          17=>"41c72d39-60e4-2a0f-66ff-57c11d9704e3",
+          9=>"bdc7f8d8-8d82-37d5-1ea2-57bc1274ebdc",
+          37=>"bdc7f8d8-8d82-37d5-1ea2-57bc1274ebdc",
+          38=>"bdc7f8d8-8d82-37d5-1ea2-57bc1274ebdc",
+          14=>"a24fd23d-9e73-82fd-fa9e-57c120efbf78",
+          30=>"a5a22a78-a1a5-9f74-de0d-57c120053790",
+          4=>"f1342ba5-8ab9-65eb-5a4c-57c12063b54a",
+          13=>"314a0b7c-6d9d-a061-0f6d-57c121c73d94",
+          32=>"314a0b7c-6d9d-a061-0f6d-57c121c73d94",
+          18=>"5bf846b9-45ff-291b-61f7-57c1213a32bf",
+          31=>"6109a9e8-d47a-43b6-a662-57c1215f75b0",
+          29=>"d090efd4-bd08-6908-e852-57c122c58a82",
+          12=>"cc1d5a6b-0994-72f9-025b-57c122348bf0",
+          16=>"ac668860-304d-2c51-f2a0-57c122bd7202",
+          21=>"68c5f5c3-8afb-4c57-0736-57c122b1d159",
+          24=>"68c5f5c3-8afb-4c57-0736-57c122b1d159",
+          11=>"94b60886-96e6-11aa-5d85-57bc129195bd",
+          39=>"2bfd252a-93da-315c-debb-57c12314cd22",
+          40=>"2bfd252a-93da-315c-debb-57c12314cd22",
+          15=>"8a11b684-4fc1-19ec-a72d-57c124bf72a0",
+          3=>"8cfcee7a-5a6f-b57d-d638-57c1245d01c9",
+          35=>"b51a7482-8a0f-63e3-a80b-57c124f424a0",
+          36=>"b51a7482-8a0f-63e3-a80b-57c124f424a0",
+          8=>"b51a7482-8a0f-63e3-a80b-57c124f424a0",
+          1=>"72915159-d2ef-dfc3-92aa-57c1259da85a",
+          41=>"72915159-d2ef-dfc3-92aa-57c1259da85a",
+          25=>"46faf09f-68ee-7c88-2545-57c125cffe08",
+          26=>"46faf09f-68ee-7c88-2545-57c125cffe08",
+          19=>"46faf09f-68ee-7c88-2545-57c125cffe08",
+          22=>"46faf09f-68ee-7c88-2545-57c125cffe08",
+          43=>"3ce25248-a163-f67b-e9ca-57bc1271e54e",
+          7=>"389b8a97-49c1-852f-6278-57c12661883b",
+          6=>"5ec593e0-57b3-dba9-04fe-57c126954caf",
+          33=>"5ec593e0-57b3-dba9-04fe-57c126954caf",
+          34=>"5ec593e0-57b3-dba9-04fe-57c126954caf",
+          10=>"97b5e847-8600-9b16-9cec-57c126df2915",
+          2=>"aba6cc85-fbf9-316e-b749-57c127f934bd",
+          42=>"aba6cc85-fbf9-316e-b749-57c127f934bd",
+          5=>"a754fc18-67d3-594e-5595-57c12727be88");
+  }
     /*
     Funcion man simplificada para resumir operacion de importacion
     */
     public function main() {
       $rows = $this->getProspectos();//1 Obtenemos datos completos a importar
-      $session_id = $this->login();//2 Nos logueamos en REST CRM
+      $session_id = $this->login();
       $this->restInsert($session_id, $rows);//3 Insertamos todos los datos uno por uno
     }
 
@@ -99,10 +145,25 @@ class SyncSugarShell extends Shell
 
         if (isset($row->compromisos)){
           foreach  ($row->compromisos as $compromiso) {
-            $this->addCall($session_id, $row->sugar_uuid, $compromiso->fecha, $compromiso->hora, $compromiso->comentarios);
+            $this->addCall(
+              $session_id,
+              $row->sugar_uuid,
+              $compromiso->fecha,
+              $compromiso->hora,
+              $compromiso->comentarios,
+              $row->tmk_usuario_id);
           }
         }
-        $this->Prospectos->save($row);
+        if (isset($row->tmk_fecha_agenda)){
+            $this->addMeeting(
+              $session_id,
+              $row->sugar_uuid,
+              $row->tmk_fecha_agenda,
+              $row->tmk_hora_agenda,
+              $row->tmk_comentarios,
+              $row->tmk_vendedor_id);
+        }
+        //$this->Prospectos->save($row);
         $this->progressBar($i, $l);
         $i++;
 
@@ -123,11 +184,14 @@ class SyncSugarShell extends Shell
             'Prospectos.tmk_comentarios',
             'Prospectos.created',
             'Prospectos.modified',
-            'Prospectos.sugar_uuid'],
+            'Prospectos.sugar_uuid',
+            'Prospectos.tmk_fecha_agenda',
+            'Prospectos.tmk_hora_agenda',
             'Prospectos.tmk_usuario_id',
-            'Prospectos.tmk_vendedor_id'
+            'Prospectos.tmk_vendedor_id'],
         'contain' => ['Proyectos', 'Compromisos'],
-        'conditions' => array('Prospectos.id'=> 34240)
+        'limit' => 100,
+        'order' => ['Prospectos.id' => 'DESC']
       );
       if (isset($this->args[0])&& $this->args[0] == "new") {
           $query_params['conditions'] = ['Prospectos.sugar_uuid is'  => null];
@@ -159,10 +223,14 @@ class SyncSugarShell extends Shell
                 array("name" => "date_entered", "value" => date_format($created, 'Y-m-d H:i:s')),
                 array("name" => "date_modified", "value" => date_format($created, 'Y-m-d H:i:s')),
                 array("name" => "lead_source", "value" => "Web Site"),
-                array("name" => "assigned_user_id", "value" => (isset($this->))?:),
            ),
       );
-      debug(date_format($created, 'Y-m-d H:i'));
+
+      if(isset($this->users[$userId])) {
+        array_push($set_entry_parameters['name_value_list'],array(
+            "name" => "assigned_user_id",
+            "value" => $this->users[$userId]));
+      }
       if(!is_null($sugar_uuid)) {
         array_push($set_entry_parameters['name_value_list'],array("name" => "id", "value" => $sugar_uuid));
       }
@@ -195,7 +263,7 @@ class SyncSugarShell extends Shell
     /*
     Crea una llamada y la une al LEAD
     */
-    function  addCall($session_id, $leadId, $date, $time, $comments) {
+    function  addCall($session_id, $leadId, $date, $time, $comments,$userId) {
       $date = date_format($date, 'Y-m-d');
       $date .= " " . ($time + 6). ":00:00";
       $set_entry_parameters = array(
@@ -217,15 +285,59 @@ class SyncSugarShell extends Shell
                 array("name" => "duration_hours", "value" => "00"),
                 array("name" => "duration_minutes", "value" => 15),
                 array("name" => "direction", "value" => "Saliente"),
-                array("name" => "status", "value" => "Realizada"),
-                array("name" => "assigned_user_id", "value" => "6bfb92ab-8852-326c-023f-57857543e0cc"),
+                array("name" => "status", "value" => "Held")
            ),
       );
+      if(isset($this->users[$userId])) {
+        array_push($set_entry_parameters['name_value_list'],array(
+            "name" => "assigned_user_id",
+            "value" => $this->users[$userId]));
+      }
       $set_entry_result = $this->call("set_entry", $set_entry_parameters);
       //agregar relacion con usuario o asignado a
       $this->createRelationship($session_id, $leadId, "calls", $set_entry_result->id);
     }
+    /*
+    Modulo para agregar una cita con el vendedor
+    */
+    function  addMeeting($session_id, $leadId, $date, $time, $comments, $sellerId) {
+      $date = date_format($date, 'Y-m-d');
+      $date .= " " . ($time + 7). ":00:00";
+      $status = "";
 
+      if (date_create($date) > date_create("now")) {
+        $status = "Planned";
+      } else {
+        $status = "Held";
+      }
+      $set_entry_parameters = array(
+           //session id
+           "session" => $session_id,
+
+           //The name of the module from which to retrieve records.
+           "module_name" => "Meetings",
+
+           //Record attributes
+
+           "name_value_list" => array(
+                //t"2016-12-28 13:09"o update a record, you will nee to pass in a record id as commented below
+                //array("name" => "id", "value" => "9b170af9-3080-e22b-fbc1-4fea74def88f"),
+
+                array("name" => "name", "value" => $comments),
+                array("name" => "date_start", "value" => $date),
+                array("name" => "description", "value" => $comments),
+                array("name" => "status", "value" => $status)
+           ),
+      );
+      if(isset($this->sellers[$sellerId])) {
+        array_push($set_entry_parameters['name_value_list'],array(
+            "name" => "assigned_user_id",
+            "value" => $this->sellers[$sellerId]));
+      }
+      $set_entry_result = $this->call("set_entry", $set_entry_parameters);
+      //agregar relacion con usuario o asignado a
+      $this->createRelationship($session_id, $leadId, "meetings", $set_entry_result->id);
+    }
     /*
     Modulo para relacionar por el momento cualquier modulo con el Modulo
     de leads.
@@ -253,9 +365,7 @@ class SyncSugarShell extends Shell
       );
       $set_relationship_result = $this->call("set_relationship", $set_relationship_parameters);
     }
-    function addApointment() {
 
-    }
     function progressBar($iteration,$total) {
       echo "                                                               \r";
       $barLength = 50;

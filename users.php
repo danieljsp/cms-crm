@@ -6,7 +6,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT username  FROM usuarios ";
+$sql = "SELECT *  FROM vendedores ";
 $result = $conn->query($sql);
 
 
@@ -111,10 +111,10 @@ $password = "stusWeW2";
          "name_value_list" => array(
               //to update a record, you will nee to pass in a record id as commented below
               //array("name" => "id", "value" => "9b170af9-3080-e22b-fbc1-4fea74def88f"),
-              array("name" => "first_name", "value" => "REAL"),
-              array("name" => "last_name", "value" => "REAL"),
-              array("name" => "email1", "value" => $row["username"]),
-              array("name" => "user_name", "value" => $row["username"]),
+              array("name" => "first_name", "value" => $row["nombre"]),
+              array("name" => "last_name", "value" => "VENDEDOR"),
+              array("name" => "email1", "value" => $row["email"]),
+              array("name" => "user_name", "value" => $row["email"]),
               array("name" => "user_hash", "value" => md5("impulsa3000"))
          ),
     );
