@@ -197,7 +197,7 @@ class SyncSugarShell extends Shell
     function restInsert($session_id, $rows) {
       $i=1;
       $l=count($rows);
-      debug($rows);
+      //debug($rows);
       foreach ($rows as $row) {
         $proyecto = "";
         $module_name = $this->getProspectoType($row);
