@@ -1,6 +1,8 @@
 <?php namespace App\Shell;
 
 use Cake\Console\Shell;
+use Cake\I18n\Time;
+use Cake\I18n\FrozenTime;
 
 class SyncSugarShell extends Shell
 {   public $users;
@@ -195,6 +197,7 @@ class SyncSugarShell extends Shell
     function restInsert($session_id, $rows) {
       $i=1;
       $l=count($rows);
+      debug($rows);
       foreach ($rows as $row) {
         $proyecto = "";
         $module_name = $this->getProspectoType($row);
@@ -202,6 +205,8 @@ class SyncSugarShell extends Shell
         if (isset($row->proyecto->nombre)){
           $proyecto = $row->proyecto->nombre;
         }
+        $ciudad = isset($row->ciudade->nombre)?$row->ciudade->nombre:"";
+        $estado = isset($row->ciudade->nombre)?$row->ciudade->estado->nombre:"";
         $row->sugar_uuid = $this->addProspecto(
           $module_name,
           $session_id,
@@ -210,11 +215,13 @@ class SyncSugarShell extends Shell
           $row->phone,
           $proyecto,
           $row->tmk_comentarios,
-          $row->created,
+          $row->created->modify('-6 hour'),
           $row->modified,
           $row->sugar_uuid,
           $row->tmk_usuario_id,
-          $source
+          $source,
+          $ciudad,
+          $estado
         );
 
         if (isset($row->compromisos)){
@@ -226,7 +233,7 @@ class SyncSugarShell extends Shell
               $compromiso->hora,
               $compromiso->comentarios,
               $row->tmk_usuario_id,
-              $compromiso->created,
+              $compromiso->created->modify('-6 hour'),
               $module_name);
           }
         }
@@ -238,8 +245,18 @@ class SyncSugarShell extends Shell
               $row->tmk_hora_agenda,
               $row->tmk_comentarios,
               $row->tmk_vendedor_id,
-              $row->created,
+              $row->created->modify('-6 hour'),
               $module_name);
+              $this->addOportunity(
+                "Opportunities",
+                $session_id,
+                $proyecto,
+                $row->tmk_fecha_agenda,
+                "Value Proposition",
+                $row->tmk_vendedor_id,
+                $source,
+                $row->sugar_uuid
+            );
         }
         //$this->Prospectos->save($row);
         $this->progressBar($i, $l);
@@ -267,14 +284,17 @@ class SyncSugarShell extends Shell
             'Prospectos.tmk_hora_agenda',
             'Prospectos.tmk_usuario_id',
             'Prospectos.tmk_vendedor_id',
-            'Prospectos.llamada_id'],
-        'contain' => ['Proyectos', 'Compromisos'],
-        'limit' => 100,
+            'Prospectos.tmk_ciudad_id',
+            'Prospectos.llamada_id',
+            'Ciudades.nombre',
+            'Estados.nombre'],
+        'contain' => ['Proyectos', 'Compromisos', 'Ciudades', 'Ciudades.Estados'],
+        //'limit' => 100,
         'order' => ['Prospectos.id' => 'DESC'],
         //'conditions' => ['Prospectos.id is'  => 34262]
       );
       if (isset($this->args[0])&& $this->args[0] == "new") {
-          $query_params['conditions'] = ['Prospectos.id is'  => 34359];
+          $query_params['conditions'] = ['Prospectos.id is'  => 34364];
       }
       $query = $this->Prospectos->find('all', $query_params);
       $rows = $query->all();
@@ -283,8 +303,38 @@ class SyncSugarShell extends Shell
     /*
       Agrega un nuevo lead (Cliente potencial)
     */
-    function addProspecto($module_name, $session_id, $first_name,$email1,$phone_work, $project, $comentarios, $created, $modified, $sugar_uuid,$userId, $source) {
-debug($source);
+    function addOportunity($module_name, $session_id, $name,$date_closed,$sale_stage, $userId, $source, $contactId) {
+      //create account -------------------------------------
+      $set_entry_parameters = array(
+           //session id
+           "session" => $session_id,
+           //The name of the module from which to retrieve records.
+           "module_name" => $module_name,
+           //Record attributes
+           "name_value_list" => array(
+                array("name" => "name", "value" => $name),//como nombre del proyecto
+                array("name" => "date_closed", "value" => date_format($date_closed, 'Y-m-d H:i:s')),//Fecha de la cita
+                array("name" => "sales_stage", "value" => "Value Proposition"),//Etapa de la venta en 30%
+                array("name" => "probability", "value" => "30"),//Etapa de la venta en 30%
+                array("name" => "opportunity_type", "value" => "New Business"),// Nuevo negocio
+                array("name" => "account_id", "value" => "2bb102ab-00c0-86f1-7e6a-579444f08b1a"),
+                array("name" => "lead_source", "value" => $source),
+           ),
+      );
+      //Asignacion al vendedor asignado en la cita
+      if(isset($this->sellers[$userId])) {
+        array_push($set_entry_parameters['name_value_list'],array(
+            "name" => "assigned_user_id",
+            "value" => $this->sellers[$userId]));
+      }
+      $set_entry_result = $this->call("set_entry", $set_entry_parameters);
+      //agregar relacion con usuario o asignado a
+      $this->createRelationship($session_id, $contactId, "opportunities", $set_entry_result->id, "Contacts");
+    }
+    /*
+      Agrega un nuevo lead (Cliente potencial)
+    */
+    function addProspecto($module_name, $session_id, $first_name,$email1,$phone_work, $project, $comentarios, $created, $modified, $sugar_uuid,$userId, $source, $ciudad, $estado) {
       //create account -------------------------------------
       $set_entry_parameters = array(
            //session id
@@ -300,8 +350,10 @@ debug($source);
                 array("name" => "phone_work", "value" => $phone_work),
                 array("name" => "proyecto_c", "value" => $project),
                 array("name" => "description", "value" => $comentarios),
-                array("name" => "date_entered", "value" => date_format($created, 'Y-m-d H:i:s')),
+                array("name" => "date_entered", "value" => $created->format('Y-m-d H:i:s')),
                 array("name" => "lead_source", "value" => $source),
+                array("name" => "primary_address_city", "value" => $ciudad),
+                array("name" => "primary_address_state", "value" => $estado),
            ),
       );
 
@@ -345,7 +397,9 @@ debug($source);
     */
     function  addCall($session_id, $leadId, $date, $time, $comments, $userId, $created, $module_name) {
       $date = date_format($date, 'Y-m-d');
-      $date .= " " . ($time + 6). ":00:00";
+      $date .= " " . ($time + 7). ":00:00";
+      $created = date_format($created, 'Y-m-d');
+      $created .= " " . ($created + 7). ":00:00";
       $status = $this->getStatus($date);
       $set_entry_parameters = array(
            //session id
@@ -360,7 +414,7 @@ debug($source);
                 array("name" => "duration_hours", "value" => "00"),
                 array("name" => "duration_minutes", "value" => 15),
                 array("name" => "direction", "value" => "Saliente"),
-                array("name" => "date_entered", "value" => date_format($created, 'Y-m-d H:i:s')),
+                array("name" => "date_entered", "value" => $created),
                 array("name" => "status", "value" => $status)
            ),
       );
