@@ -294,7 +294,7 @@ class SyncSugarShell extends Shell
         //'conditions' => ['Prospectos.id is'  => 34262]
       );
       if (isset($this->args[0])&& $this->args[0] == "new") {
-          $query_params['conditions'] = ['Prospectos.id is'  => 34364];
+          $query_params['conditions'] = ['Prospectos.tmk_usuario_id is'  => 90];
       }
       $query = $this->Prospectos->find('all', $query_params);
       $rows = $query->all();
