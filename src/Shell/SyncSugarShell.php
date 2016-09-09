@@ -413,7 +413,7 @@ class SyncSugarShell extends Shell
                 array("name" => "description", "value" => $comments),
                 array("name" => "duration_hours", "value" => "00"),
                 array("name" => "duration_minutes", "value" => 15),
-                array("name" => "direction", "value" => "Saliente"),
+                array("name" => "direction", "value" => "Outbound"),//TODO Verificar, el dato de saliente
                 array("name" => "date_entered", "value" => $created),
                 array("name" => "status", "value" => $status)
            ),
