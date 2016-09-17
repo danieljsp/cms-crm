@@ -7,10 +7,15 @@ use Cake\I18n\FrozenTime;
 class SyncSugarShell extends Shell
 {   public $users;
     public $sellers;
+    public $webList;
+    public $callMe;
+
     public function initialize()
     {
         parent::initialize();
         $this->loadModel('Prospectos');
+        $this->webList = "c120c431-4400-3835-c85d-57db8981076b";
+        $this->callMe = "27c720bf-3a4d-d2a8-5b85-57db890c2891";
         $this->users = array(
           1=>"69e17db7-cb18-dd7a-38cc-57bc120f3f18",
           2=>"c6d79eca-ed8c-f81e-161b-57bc12d9f75a",
@@ -185,7 +190,7 @@ class SyncSugarShell extends Shell
               $module_name);
         }
         //$this->Prospectos->save($row);
-        $this->progressBar($i, $l);
+      //  $this->progressBar($i, $l);
         $i++;
 
       }
@@ -207,6 +212,12 @@ class SyncSugarShell extends Shell
         }
         $ciudad = isset($row->ciudade->nombre)?$row->ciudade->nombre:"";
         $estado = isset($row->ciudade->nombre)?$row->ciudade->estado->nombre:"";
+        $llamado = false;
+        if ($row->tmk_fecha_llamada == null) {
+          $llamado = false;
+        } else {
+          $llamado = true;
+        }
         $row->sugar_uuid = $this->addProspecto(
           $module_name,
           $session_id,
@@ -221,7 +232,8 @@ class SyncSugarShell extends Shell
           $row->tmk_usuario_id,
           $source,
           $ciudad,
-          $estado
+          $estado,
+          $llamado
         );
 
         if (isset($row->compromisos)){
@@ -246,7 +258,8 @@ class SyncSugarShell extends Shell
               $row->tmk_comentarios,
               $row->tmk_vendedor_id,
               $row->created->modify('-6 hour'),
-              $module_name);
+              $module_name,
+              $proyecto);
               $this->addOportunity(
                 "Opportunities",
                 $session_id,
@@ -258,7 +271,7 @@ class SyncSugarShell extends Shell
                 $row->sugar_uuid
             );
         }
-        //$this->Prospectos->save($row);
+        $this->Prospectos->save($row);
         $this->progressBar($i, $l);
         $i++;
 
@@ -285,16 +298,17 @@ class SyncSugarShell extends Shell
             'Prospectos.tmk_usuario_id',
             'Prospectos.tmk_vendedor_id',
             'Prospectos.tmk_ciudad_id',
+            'Prospectos.tmk_fecha_llamada',
             'Prospectos.llamada_id',
             'Ciudades.nombre',
             'Estados.nombre'],
         'contain' => ['Proyectos', 'Compromisos', 'Ciudades', 'Ciudades.Estados'],
         //'limit' => 100,
         'order' => ['Prospectos.id' => 'DESC'],
-        //'conditions' => ['Prospectos.id is'  => 34262]
+        'conditions' => ['Prospectos.sugar_uuid is'  => null]
       );
       if (isset($this->args[0])&& $this->args[0] == "new") {
-          $query_params['conditions'] = ['Prospectos.tmk_usuario_id is'  => 90];
+          $query_params['conditions'] = ['Prospectos.id'  => 34262];
       }
       $query = $this->Prospectos->find('all', $query_params);
       $rows = $query->all();
@@ -305,6 +319,7 @@ class SyncSugarShell extends Shell
     */
     function addOportunity($module_name, $session_id, $name,$date_closed,$sale_stage, $userId, $source, $contactId) {
       //create account -------------------------------------
+
       $set_entry_parameters = array(
            //session id
            "session" => $session_id,
@@ -334,7 +349,7 @@ class SyncSugarShell extends Shell
     /*
       Agrega un nuevo lead (Cliente potencial)
     */
-    function addProspecto($module_name, $session_id, $first_name,$email1,$phone_work, $project, $comentarios, $created, $modified, $sugar_uuid,$userId, $source, $ciudad, $estado) {
+    function addProspecto($module_name, $session_id, $first_name,$email1,$phone_work, $project, $comentarios, $created, $modified, $sugar_uuid,$userId, $source, $ciudad, $estado, $llamado = false) {
       //create account -------------------------------------
       $set_entry_parameters = array(
            //session id
@@ -367,6 +382,28 @@ class SyncSugarShell extends Shell
         array_push($set_entry_parameters['name_value_list'],array("name" => "id", "value" => $sugar_uuid));
       }
       $set_entry_result = $this->call("set_entry", $set_entry_parameters);
+      $leadId = $set_entry_result->id;
+      $listId = "";
+
+        switch ($source) {
+          case "CallMe";
+
+            $listId = $this->callMe;
+            $this->createRelationship($session_id, $leadId, "prospect_lists", $listId , $module_name);
+            break;
+          case "Web Site";
+
+            $listId = $this->webList;
+            if (!$llamado) {
+              $this->createRelationship($session_id, $leadId, "prospect_lists", $listId , $module_name);
+            }
+            break;
+          default:
+            $listId = $this->webList;
+            break;
+        }
+      //agregar relacion con lista de publico objetivo
+
       return $set_entry_result->id;
     }
 
@@ -439,7 +476,7 @@ class SyncSugarShell extends Shell
     /*
     Modulo para agregar una cita con el vendedor
     */
-    function  addMeeting($session_id, $leadId, $date, $time, $comments, $sellerId, $created, $module_name) {
+    function  addMeeting($session_id, $leadId, $date, $time, $comments, $sellerId, $created, $module_name,$proyect) {
       $date = date_format($date, 'Y-m-d');
       $date .= " " . ($time + 7). ":00:00";
       $status = $this->getStatus($date);
@@ -458,7 +495,8 @@ class SyncSugarShell extends Shell
                 //t"2016-12-28 13:09"o update a record, you will nee to pass in a record id as commented below
                 //array("name" => "id", "value" => "9b170af9-3080-e22b-fbc1-4fea74def88f"),
 
-                array("name" => "name", "value" => $comments),
+                array("name" => "name", "value" => "Cita Programada"),
+                array("name" => "location", "value" => $proyect),
                 array("name" => "date_start", "value" => $date),
                 array("name" => "description", "value" => $comments),
                 array("name" => "date_entered", "value" => date_format($created, 'Y-m-d H:i:s')),
