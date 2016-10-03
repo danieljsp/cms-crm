@@ -24,6 +24,7 @@ class WebservicesController extends AppController
     $this->webList = "c120c431-4400-3835-c85d-57db8981076b";
     $this->callMe = "27c720bf-3a4d-d2a8-5b85-57db890c2891";
     //svar_dump($this->request->data());
+    if (!empty($this->request->data('telefono'))) {
     $session_id = $this->login();
     $sugar_uuid = $this->addProspecto(
       'Leads',
@@ -33,9 +34,13 @@ class WebservicesController extends AppController
       $this->request->data('telefono'),
       $this->request->data('proyecto'),
       $this->request->data('comentarios'),
-      'CallMe'
+      $this->request->data('tipo'),
     );
     $this->set('sugar_uuid', $sugar_uuid);
+    $this->set('status','true');
+  } else {
+    $this->set('status','false');
+  }
 
   }
   public function test(){
