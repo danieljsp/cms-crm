@@ -34,7 +34,7 @@ class WebservicesController extends AppController
       $this->request->data('telefono'),
       $this->request->data('proyecto'),
       $this->request->data('comentarios'),
-      $this->request->data('tipo'),
+      $this->request->data('tipo')
     );
     $this->set('sugar_uuid', $sugar_uuid);
     $this->set('status','true');
